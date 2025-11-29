@@ -27,20 +27,19 @@
             form.addEventListener('submit'),function(event){
 
                   event.preventDefault();
-                  const VALID_EMAIL=''
-
-
-
-
-
-
-
-
-
-
-
-
-            }
+                  const VALID_EMAIL='admin@gmail.com';
+                  const VALID_PASSWORD='admin1234';
+                  const userEmail = document.getElementById('email').value;
+                  const userPassword = document.getElementById('password').value;
+                  if(userEmail===VALID_EMAIL && userPassword===VALID_PASSWORD){
+                        alert("Login Success!");
+                        window.location.href= "admin.html";
+                  }
+                  else{
+                        alert("Wrong email or password");
+                  
+                  }
+            };
           </script>
            
       
