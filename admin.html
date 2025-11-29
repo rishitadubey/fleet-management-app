@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simplified Code</title>
+    <style>
+        /* Basic CSS for structure and readability */
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #navbar { padding: 10px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; background: #f4f4f4; }
+        #admin-page { display: flex; }
+        #sidebar { width: 250px; border-right: 1px solid #ccc; padding: 15px; }
+        #fleet-form input, #fleet-form select, #add-fleet-btn { width: 100%; margin-bottom: 8px; box-sizing: border-box; padding: 5px; }
+        #main-content { flex-grow: 1; padding: 15px; }
+        
+        /* 3-column layout using float for basic structure */
+        #fleet-cards-container::after { content: ""; clear: both; display: table; }
+        .fleet-card { 
+            width: 31%; /* Adjusted for better spacing */
+            border: 1px solid #999; 
+            padding: 10px;
+            margin: 0 1% 10px 0;
+            float: left;
+        }
+        .card-header img { width: 100%; height: 80px; object-fit: cover; margin-bottom: 5px; }
+        .card-actions button { display: block; width: 100%; margin-top: 5px; padding: 6px; cursor: pointer; }
+        .available { color: green; font-weight: bold; }
+        .unavailable { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="navbar">
+    <h1>Fleet Admin</h1>
+    <div id="filters">
+        <select id="category-filter">
+            <option value="All">All Category</option>
+            <option value="Auto">Auto</option>
+            <option value="Car">Car</option>
+            <option value="Truck">Truck</option>
+            <option value="Bus">Bus</option>
+        </select>
+        <select id="availability-filter">
+            <option value="All">All Status</option>
+            <option value="Available">Available</option>
+            <option value="Unavailable">Unavailable</option>
+        </select>
+        <button id="clear-filter-btn">Clear Filter</button>
+    </div>
+</div>
+
+<div id="admin-page">
+    <div id="sidebar">
+        <h3>Add New Vehicle</h3>
+        <form id="fleet-form">
+            <input type="text" id="reg-no" placeholder="Reg No of Vehicle" required>
+            <select id="category" required>
+                <option value="">Select Category</option>
+                <option value="Auto">Auto</option>
+                <option value="Car">Car</option>
+                <option value="Truck">Truck</option>
+                <option value="Bus">Bus</option>
+            </select>
+            <input type="text" id="driver-name" placeholder="Driver Name" required>
+            <label><input type="checkbox" id="is-available" checked> Is Available</label>
+            <button type="submit" id="add-fleet-btn">Add Fleet</button>
+        </form>
+    </div>
+    <div id="main-content">
+        <h3>Vehicle Overview</h3>
+        <div id="fleet-cards-container"></div>
+    </div>
+</div>
+
+<script>
+    var FLEET_IMAGE_SRC = "Sample Vehicle Link";
+    var fleetData = [];
+    var cardContainer = document.getElementById('fleet-cards-container');
+    var categoryFilter = document.getElementById('category-filter');
+    var availabilityFilter = document.getElementById('availability-filter');
+    var fleetForm = document.getElementById('fleet-form');
+
+    // Helper to find vehicle by Reg No
+    function findVehicle(regNo) {
+        var i;
+        for (i = 0; i < fleetData.length; i++) {
+            if (fleetData[i].regNo === regNo) {
+                return fleetData[i];
+            }
+        }
+        return null;
+    }
+
+    // Renders the vehicle cards to the UI
+    function renderFleetCards(dataToRender) {
+        var html = "";
+        var i;
+        var currentData = dataToRender || fleetData;
+
+        if (currentData.length === 0) {
+            cardContainer.innerHTML = "<p>No vehicles found.</p>";
+            return;
+        }
+
+        for (i = 0; i < currentData.length; i++) {
+            var vehicle = currentData[i];
+            var status = vehicle.isAvailable ? 'Available' : 'Unavailable';
+            var statusClass = vehicle.isAvailable ? 'available' : 'unavailable';
+            
+            html += '<div class="fleet-card">';
+            html += '  <div class="card-header"><img src="' + FLEET_IMAGE_SRC + '"><strong>' + vehicle.regNo + '</strong> (' + vehicle.category + ')</div>';
+            html += '  <div class="card-details"><p>Driver: <span>' + vehicle.driverName + '</span></p><p>Status: <span class="' + statusClass + '">' + status + '</span></p></div>';
+            html += '  <div class="card-actions">';
+            // Use window.* to ensure functions are globally accessible by inline onclick
+            html += '    <button onclick="window.updateDriver(\'' + vehicle.regNo + '\')">1. Update Driver</button>';
+            html += '    <button onclick="window.toggleAvailability(\'' + vehicle.regNo + '\')">2. Change Availability</button>';
+            html += '    <button onclick="window.deleteVehicle(\'' + vehicle.regNo + '\')">3. Delete Vehicle</button>';
+            html += '  </div>';
+            html += '</div>';
+        }
+        cardContainer.innerHTML = html;
+    }
+
+    // Filters the data based on navbar selections
+    function applyFilters() {
+        var filteredData = [];
+        var category = categoryFilter.value;
+        var availability = availabilityFilter.value;
+        var i;
+
+        for (i = 0; i < fleetData.length; i++) {
+            var vehicle = fleetData[i];
+            var matchCategory = (category === 'All' || vehicle.category === category);
+            var matchAvailability = (availability === 'All' || vehicle.isAvailable === (availability === 'Available'));
+
+            if (matchCategory && matchAvailability) {
+                filteredData.push(vehicle);
+            }
+        }
+        renderFleetCards(filteredData);
+    }
+
+    // --- Card Actions ---
+
+    window.updateDriver = function(regNo) {
+        var vehicle = findVehicle(regNo);
+        if (!vehicle) return;
+        var newDriver = prompt("Enter new driver name for " + regNo + ":", vehicle.driverName);
+        
+        if (newDriver !== null && newDriver.trim() !== "") {
+            vehicle.driverName = newDriver.trim();
+            applyFilters();
+        }
+    }
+
+    window.toggleAvailability = function(regNo) {
+        var vehicle = findVehicle(regNo);
+        if (!vehicle) return;
+        vehicle.isAvailable = !vehicle.isAvailable;
+        applyFilters();
+    }
+
+    window.deleteVehicle = function(regNo) {
+        if (confirm("Are you sure you want to delete vehicle " + regNo + "?")) {
+            var i;
+            for (i = 0; i < fleetData.length; i++) {
+                if (fleetData[i].regNo === regNo) {
+                    fleetData.splice(i, 1);
+                    break;
+                }
+            }
+            applyFilters();
+        }
+    }
+
+    // --- Form and Filter Events ---
+
+    fleetForm.onsubmit = function(e) {
+        e.preventDefault();
+        var regNo = document.getElementById('reg-no').value.trim();
+        var category = document.getElementById('category').value;
+        var driverName = document.getElementById('driver-name').value.trim();
+        var isAvailable = document.getElementById('is-available').checked;
+
+        if (findVehicle(regNo)) {
+            alert("Vehicle with Reg No " + regNo + " already exists!");
+            return;
+        }
+
+        var newVehicle = {
+            regNo: regNo,
+            category: category,
+            driverName: driverName,
+            isAvailable: isAvailable
+        };
+
+        fleetData.push(newVehicle);
+        applyFilters(); // Re-render with new data
+        
+        // Reset form
+        fleetForm.reset();
+        document.getElementById('is-available').checked = true;
+    };
+    
+    categoryFilter.onchange = applyFilters;
+    availabilityFilter.onchange = applyFilters;
+    
+    document.getElementById('clear-filter-btn').onclick = function() {
+        categoryFilter.value = 'All';
+        availabilityFilter.value = 'All';
+        renderFleetCards();
+    };
+
+    // Initial render
+    window.onload = function() {
+        renderFleetCards();
+    };
+</script>
+
+</body>
+</html>
